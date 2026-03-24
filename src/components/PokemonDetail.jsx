@@ -2,15 +2,38 @@ function PokemonDetail({
   selectedPokemon,
   detailData,
   onBack,
+  onPrevious,
+  onNext,
+  hasPrevious,
+  hasNext,
   formatName,
   formatNumber,
 }) {
   return (
     <main className="app-shell py-5">
       <div className="container detail-view">
-        <button className="btn btn-outline-secondary mb-4" onClick={onBack}>
-          Back to grid
-        </button>
+        <div className="detail-toolbar mb-4">
+          <button className="btn btn-outline-secondary" onClick={onBack}>
+            Back to grid
+          </button>
+
+          <div className="detail-nav-buttons">
+            <button
+              className="btn btn-outline-primary"
+              onClick={onPrevious}
+              disabled={!hasPrevious}
+            >
+              Previous Pokemon
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={onNext}
+              disabled={!hasNext}
+            >
+              Next Pokemon
+            </button>
+          </div>
+        </div>
 
         <section className="card border-0 shadow-sm detail-card">
           <div className="card-body p-4 p-lg-5">

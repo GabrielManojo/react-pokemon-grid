@@ -75,6 +75,26 @@ function App() {
     [pokemons],
   );
 
+  const selectedPokemonIndex = useMemo(() => {
+    if (!selectedPokemon) {
+      return -1;
+    }
+
+    return sortedPokemons.findIndex(
+      (pokemon) => pokemon.id === selectedPokemon.id,
+    );
+  }, [selectedPokemon, sortedPokemons]);
+
+  const previousPokemon =
+    selectedPokemonIndex > 0
+      ? sortedPokemons[selectedPokemonIndex - 1]
+      : null;
+
+  const nextPokemon =
+    selectedPokemonIndex >= 0 && selectedPokemonIndex < sortedPokemons.length - 1
+      ? sortedPokemons[selectedPokemonIndex + 1]
+      : null;
+
   // Converts names like "mr-mime" into "Mr Mime".
   const formatName = (name) =>
     name
@@ -197,11 +217,27 @@ function App() {
     setErrorMessage("");
   };
 
+  const openPreviousPokemon = () => {
+    if (previousPokemon) {
+      openPokemonDetail(previousPokemon);
+    }
+  };
+
+  const openNextPokemon = () => {
+    if (nextPokemon) {
+      openPokemonDetail(nextPokemon);
+    }
+  };
+
   if (isDetailLoading && selectedPokemon) {
     return (
       <DetailLoading
         selectedPokemon={selectedPokemon}
         onBack={closePokemonDetail}
+        onPrevious={openPreviousPokemon}
+        onNext={openNextPokemon}
+        hasPrevious={Boolean(previousPokemon)}
+        hasNext={Boolean(nextPokemon)}
         formatName={formatName}
       />
     );
@@ -213,6 +249,10 @@ function App() {
         selectedPokemon={selectedPokemon}
         detailData={detailData}
         onBack={closePokemonDetail}
+        onPrevious={openPreviousPokemon}
+        onNext={openNextPokemon}
+        hasPrevious={Boolean(previousPokemon)}
+        hasNext={Boolean(nextPokemon)}
         formatName={formatName}
         formatNumber={formatNumber}
       />
