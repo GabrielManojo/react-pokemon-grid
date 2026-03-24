@@ -23,6 +23,8 @@ function App() {
   const [errorMessage, setErrorMessage] = useState("");
   // Stores Pokemon selected by the user for their team.
   const [teamPokemons, setTeamPokemons] = useState([]);
+  // Stores weaknesses for each selected Pokemon (by name).
+  const [teamPokemonWeaknesses, setTeamPokemonWeaknesses] = useState([]);
   // Stores weakness summary for the selected team.
   const [teamWeaknesses, setTeamWeaknesses] = useState([]);
 
@@ -107,6 +109,7 @@ function App() {
   useEffect(() => {
     async function buildTeamWeaknesses() {
       if (!teamPokemons.length) {
+        setTeamPokemonWeaknesses([]);
         setTeamWeaknesses([]);
         return;
       }
@@ -139,27 +142,46 @@ function App() {
 
         // Build fast lookup tables and aggregate how many team members share each weakness.
         const weaknessByType = new Map(typeWeaknessEntries);
-        const weaknessCounter = teamPokemons.reduce((counter, pokemon) => {
+
+        const pokemonWeaknessList = teamPokemons.map((pokemon) => {
+          // A Pokemon can have 1-2 types, so merge weakness arrays and deduplicate them.
           const pokemonWeaknesses = new Set(
             pokemon.types.flatMap(
               (entry) => weaknessByType.get(entry.type.name) || [],
             ),
           );
 
-          pokemonWeaknesses.forEach((name) => {
-            counter.set(name, (counter.get(name) || 0) + 1);
-          });
+          return {
+            id: pokemon.id,
+            name: pokemon.name,
+            weaknesses: [...pokemonWeaknesses].sort((a, b) =>
+              a.localeCompare(b),
+            ),
+          };
+        });
 
-          return counter;
-        }, new Map());
+        // Count how many team members are weak to each attack type.
+        const weaknessCounter = pokemonWeaknessList.reduce(
+          (counter, pokemon) => {
+            pokemon.weaknesses.forEach((name) => {
+              counter.set(name, (counter.get(name) || 0) + 1);
+            });
+
+            return counter;
+          },
+          new Map(),
+        );
 
         const weaknessesList = [...weaknessCounter.entries()]
           .map(([name, count]) => ({ name, count }))
           .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
+        // Save both views: per-Pokemon breakdown and combined team summary.
+        setTeamPokemonWeaknesses(pokemonWeaknessList);
         setTeamWeaknesses(weaknessesList);
       } catch {
         // Fallback to an empty summary if one of the type requests fails.
+        setTeamPokemonWeaknesses([]);
         setTeamWeaknesses([]);
       }
     }
@@ -366,6 +388,7 @@ function App() {
       onAddToTeam={addPokemonToTeam}
       onRemoveFromTeam={removePokemonFromTeam}
       teamPokemons={teamPokemons}
+      teamPokemonWeaknesses={teamPokemonWeaknesses}
       teamWeaknesses={teamWeaknesses}
       teamLimit={teamLimit}
       formatName={formatName}

@@ -5,6 +5,7 @@ function PokemonGrid({
   onAddToTeam,
   onRemoveFromTeam,
   teamPokemons,
+  teamPokemonWeaknesses,
   teamWeaknesses,
   teamLimit,
   formatName,
@@ -105,62 +106,104 @@ function PokemonGrid({
             )}
           </section>
 
-          {/* Right sidebar: six team slots + aggregated weakness summary. */}
+          {/* Right sidebar split into two cards to keep long content manageable. */}
           <aside className="col-12 col-xl-3">
-            <section className="card border-0 shadow-sm team-sidebar sticky-xl-top">
-              <div className="card-body p-3 p-lg-4">
-                <h2 className="h4 mb-1">Your Team</h2>
-                <p className="text-secondary small mb-3">
-                  {teamPokemons.length}/{teamLimit} slots filled
-                </p>
+            <div className="sidebar-stack">
+              <section className="card border-0 shadow-sm sidebar-card">
+                <div className="card-body p-3 p-lg-4">
+                  <h2 className="h4 mb-1">Your Team</h2>
+                  <p className="text-secondary small mb-3">
+                    {teamPokemons.length}/{teamLimit} slots filled
+                  </p>
 
-                <div className="team-slots mb-4">
-                  {Array.from({ length: teamLimit }).map((_, index) => {
-                    // Team is displayed by slot index so empty positions still render as Pokeballs.
-                    const teamPokemon = teamPokemons[index];
+                  <div className="team-slots mb-0">
+                    {Array.from({ length: teamLimit }).map((_, index) => {
+                      // Team is displayed by slot index so empty positions still render as Pokeballs.
+                      const teamPokemon = teamPokemons[index];
 
-                    return (
-                      <article
-                        key={`team-slot-${index}`}
-                        className="team-slot"
-                        aria-label={`Team slot ${index + 1}`}
-                      >
-                        <img
-                          src={
-                            teamPokemon
-                              ? teamPokemon.sprites.front_default
-                              : pokeBallImage
-                          }
-                          alt={
-                            teamPokemon
-                              ? teamPokemon.name
-                              : "Empty Pokeball slot"
-                          }
-                          className="team-slot-image"
-                        />
-                        <div className="team-slot-copy">
-                          <p className="mb-0 small fw-semibold">
-                            {teamPokemon
-                              ? formatName(teamPokemon.name)
-                              : `Empty Slot ${index + 1}`}
-                          </p>
-                          {teamPokemon ? (
-                            <button
-                              type="button"
-                              className="btn btn-link btn-sm p-0 team-remove-btn"
-                              onClick={() => onRemoveFromTeam(teamPokemon.id)}
-                            >
-                              Remove
-                            </button>
-                          ) : null}
-                        </div>
-                      </article>
-                    );
-                  })}
+                      return (
+                        <article
+                          key={`team-slot-${index}`}
+                          className="team-slot"
+                          aria-label={`Team slot ${index + 1}`}
+                        >
+                          <img
+                            src={
+                              teamPokemon
+                                ? teamPokemon.sprites.front_default
+                                : pokeBallImage
+                            }
+                            alt={
+                              teamPokemon
+                                ? teamPokemon.name
+                                : "Empty Pokeball slot"
+                            }
+                            className="team-slot-image"
+                          />
+                          <div className="team-slot-copy">
+                            <p className="mb-0 small fw-semibold">
+                              {teamPokemon
+                                ? formatName(teamPokemon.name)
+                                : `Empty Slot ${index + 1}`}
+                            </p>
+                            {teamPokemon ? (
+                              <button
+                                type="button"
+                                className="btn btn-link btn-sm p-0 team-remove-btn"
+                                onClick={() => onRemoveFromTeam(teamPokemon.id)}
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
+              </section>
 
-                <div>
-                  <p className="detail-label mb-2">Team Weaknesses</p>
+              <section className="card border-0 shadow-sm sidebar-card">
+                <div className="card-body p-3 p-lg-4 sidebar-analysis-body">
+                  {/* Per-Pokemon view: makes it clear which weaknesses belong to each member. */}
+                  <p className="detail-label mb-2">Pokemon Weaknesses</p>
+                  {teamPokemonWeaknesses.length ? (
+                    <div className="team-weakness-breakdown mb-3">
+                      {teamPokemonWeaknesses.map((pokemon) => (
+                        <article
+                          key={pokemon.id}
+                          className="team-weakness-item"
+                        >
+                          <p className="small fw-semibold mb-2">
+                            {formatName(pokemon.name)}
+                          </p>
+                          {pokemon.weaknesses.length ? (
+                            <div className="type-row">
+                              {pokemon.weaknesses.map((name) => (
+                                <span
+                                  key={`${pokemon.id}-${name}`}
+                                  className={`weakness-chip type-${name}`}
+                                >
+                                  {formatName(name)}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="small text-secondary mb-0">
+                              No double-damage weaknesses.
+                            </p>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="small text-secondary mb-3">
+                      Add Pokemon to see each member's weaknesses.
+                    </p>
+                  )}
+
+                  {/* Combined view: quick scan of overlap risk across the whole team. */}
+                  <p className="detail-label mb-2">Shared Weakness Summary</p>
                   {teamWeaknesses.length ? (
                     <div className="type-row">
                       {teamWeaknesses.map((weakness) => (
@@ -174,12 +217,12 @@ function PokemonGrid({
                     </div>
                   ) : (
                     <p className="small text-secondary mb-0">
-                      Add Pokemon to see shared weaknesses.
+                      Team summary will appear here.
                     </p>
                   )}
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </aside>
         </div>
       </div>
