@@ -6,9 +6,6 @@ import "./App.css";
 function App() {
   // State to store all Pokémon data (array of objects)
   const [pokemons, setPokemons] = useState([]);
-
-  // Boolean to check if data is still loading
-  // If array is empty → still loading
   const isLoading = pokemons.length === 0;
 
   useEffect(() => {
@@ -32,7 +29,6 @@ function App() {
   return (
     <main className="app-shell py-5">
       <div className="container">
-        {/* Header section */}
         <div className="row justify-content-center mb-5">
           <div className="col-12 col-xl-8 text-center">
             <p className="text-uppercase fw-semibold text-secondary mb-2 app-eyebrow">
