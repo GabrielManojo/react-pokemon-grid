@@ -13,7 +13,7 @@ function App() {
     async function fetchPokemons() {
       try {
         const res = await fetch(
-          "https://pokeapi.co/api/v2/pokemon?limit=151&offset=0",
+          "https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0",
         );
 
         if (!res.ok) {
