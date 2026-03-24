@@ -6,6 +6,8 @@ import PokemonDetail from "./components/PokemonDetail";
 import PokemonGrid from "./components/PokemonGrid";
 
 function App() {
+  const teamLimit = 6;
+
   // Stores all Pokemon returned from the API.
   const [pokemons, setPokemons] = useState([]);
   // Stores the currently selected Pokemon for the detail page.
@@ -18,6 +20,10 @@ function App() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   // Shows API error messages in the UI.
   const [errorMessage, setErrorMessage] = useState("");
+  // Stores Pokemon selected by the user for their team.
+  const [teamPokemons, setTeamPokemons] = useState([]);
+  // Stores weakness summary for the selected team.
+  const [teamWeaknesses, setTeamWeaknesses] = useState([]);
 
   // Runs once on first render to fetch the Pokemon list + base details.
   useEffect(() => {
@@ -86,14 +92,73 @@ function App() {
   }, [selectedPokemon, sortedPokemons]);
 
   const previousPokemon =
-    selectedPokemonIndex > 0
-      ? sortedPokemons[selectedPokemonIndex - 1]
-      : null;
+    selectedPokemonIndex > 0 ? sortedPokemons[selectedPokemonIndex - 1] : null;
 
   const nextPokemon =
-    selectedPokemonIndex >= 0 && selectedPokemonIndex < sortedPokemons.length - 1
+    selectedPokemonIndex >= 0 &&
+    selectedPokemonIndex < sortedPokemons.length - 1
       ? sortedPokemons[selectedPokemonIndex + 1]
       : null;
+
+  useEffect(() => {
+    async function buildTeamWeaknesses() {
+      if (!teamPokemons.length) {
+        setTeamWeaknesses([]);
+        return;
+      }
+
+      try {
+        const uniqueTypeEntries = [
+          ...new Map(
+            teamPokemons
+              .flatMap((pokemon) => pokemon.types)
+              .map((entry) => [entry.type.name, entry.type.url]),
+          ).entries(),
+        ];
+
+        const typeWeaknessEntries = await Promise.all(
+          uniqueTypeEntries.map(async ([typeName, typeUrl]) => {
+            const response = await fetch(typeUrl);
+
+            if (!response.ok) {
+              throw new Error("Could not load team type data.");
+            }
+
+            const typeData = await response.json();
+            return [
+              typeName,
+              typeData.damage_relations.double_damage_from.map((t) => t.name),
+            ];
+          }),
+        );
+
+        const weaknessByType = new Map(typeWeaknessEntries);
+        const weaknessCounter = teamPokemons.reduce((counter, pokemon) => {
+          const pokemonWeaknesses = new Set(
+            pokemon.types.flatMap(
+              (entry) => weaknessByType.get(entry.type.name) || [],
+            ),
+          );
+
+          pokemonWeaknesses.forEach((name) => {
+            counter.set(name, (counter.get(name) || 0) + 1);
+          });
+
+          return counter;
+        }, new Map());
+
+        const weaknessesList = [...weaknessCounter.entries()]
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+        setTeamWeaknesses(weaknessesList);
+      } catch {
+        setTeamWeaknesses([]);
+      }
+    }
+
+    buildTeamWeaknesses();
+  }, [teamPokemons]);
 
   // Converts names like "mr-mime" into "Mr Mime".
   const formatName = (name) =>
@@ -229,6 +294,26 @@ function App() {
     }
   };
 
+  const addPokemonToTeam = (pokemon) => {
+    setTeamPokemons((prevTeam) => {
+      if (prevTeam.length >= teamLimit) {
+        return prevTeam;
+      }
+
+      if (prevTeam.some((entry) => entry.id === pokemon.id)) {
+        return prevTeam;
+      }
+
+      return [...prevTeam, pokemon];
+    });
+  };
+
+  const removePokemonFromTeam = (pokemonId) => {
+    setTeamPokemons((prevTeam) =>
+      prevTeam.filter((pokemon) => pokemon.id !== pokemonId),
+    );
+  };
+
   if (isDetailLoading && selectedPokemon) {
     return (
       <DetailLoading
@@ -268,6 +353,11 @@ function App() {
       isGridLoading={isGridLoading}
       sortedPokemons={sortedPokemons}
       onSelectPokemon={openPokemonDetail}
+      onAddToTeam={addPokemonToTeam}
+      onRemoveFromTeam={removePokemonFromTeam}
+      teamPokemons={teamPokemons}
+      teamWeaknesses={teamWeaknesses}
+      teamLimit={teamLimit}
       formatName={formatName}
       formatNumber={formatNumber}
     />
